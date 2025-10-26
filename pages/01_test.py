@@ -39,7 +39,6 @@ def load_data(tickers, start, end):
     st.info(f"데이터 다운로드 시도: {start} 부터 {end}")
     
     # progress=False: yfinance 메시지 출력을 줄임
-    # ignore_tz=True: 시간대 문제를 방지 (날짜 인덱스 처리 단순화)
     data = yf.download(tickers, start=start, end=end, progress=False, ignore_tz=True)
     
     if data.empty:
@@ -54,12 +53,13 @@ def load_data(tickers, start, end):
             # 표준 MultiIndex 구조에서 'Adj Close' 레벨 선택
             adj_close_data = data['Adj Close']
         else:
-            # MultiIndex이지만 'Adj Close'가 없는 경우 (드문 오류 처리)
+            # MultiIndex이지만 'Adj Close'가 없는 경우 (오류 수정 부분)
             # 모든 컬럼 이름을 문자열로 평탄화 (예: ('Close', 'AAPL') -> 'Close, AAPL')
             data.columns = [', '.join(col).strip() for col in data.columns.values]
             
             # 'Adj Close'를 포함하는 컬럼만 선택
-            adj_close_cols = [col for col col in data.columns if 'Adj Close' in col]
+            # **** SyntaxError가 발생했던 부분 수정됨 ****
+            adj_close_cols = [col for col in data.columns if 'Adj Close' in col]
             adj_close_data = data[adj_close_cols]
             
             # 컬럼 이름을 티커만 남도록 정리 (예: 'Adj Close, AAPL' -> 'AAPL')
@@ -70,11 +70,6 @@ def load_data(tickers, start, end):
     elif 'Adj Close' in data.columns:
         # 단일 티커만 다운로드된 경우
         adj_close_data = data[['Adj Close']]
-        # 다운로드 성공한 티커의 컬럼 이름을 설정 (yfinance에서 항상 'Adj Close'로 반환될 때)
-        # 이 경우 모든 티커가 실패하고 하나만 남았을 가능성이 높습니다.
-        if len(adj_close_data.columns) == 1:
-            # 어떤 티커가 성공했는지 확실하지 않으므로, 데이터가 비어있지 않으면 그대로 진행
-            pass 
         
     else:
         st.error(f"예상치 못한 데이터 구조 오류가 발생했습니다. 컬럼: {data.columns.tolist()}")
@@ -129,4 +124,4 @@ if not stock_data.empty:
     st.dataframe(display_data.tail(10)) # 최근 10개 행만 표시
     
     st.markdown("---")
-    st.caption("데이터 출처: Yahoo Finance (`yfinance` 라이브러리) | 시가총액 기준 상위 10개 기업 목록은 시점에 따라 다를 수 있습니다.")
+    st.caption("데이터 출처: Yahoo Finance (`yfinance` 라이브러리)")
