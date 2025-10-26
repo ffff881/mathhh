@@ -2,47 +2,55 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+# --- 사이드바 설정 (슬라이더를 배치할 공간) ---
+with st.sidebar:
+    st.header('🔍 탐구 도구')
+    st.markdown('**계수 $a$ 값을 변경하여 그래프를 관찰하세요.**')
+
+    # 계수 a를 조정하는 슬라이더 생성
+    a = st.slider(
+        '계수 $a$ 값 선택:',
+        min_value=-5.0,
+        max_value=5.0,
+        value=1.0,
+        step=0.1,
+        format='%.1f' # 소수점 첫째 자리까지 표시
+    )
+
+    st.subheader(f'현재 함수')
+    # 수식 표시를 위해 LaTeX 문법 사용
+    st.latex(f"y = {a:.1f}x^2")
+
+# --- 주 화면 설정 ---
 st.title('이차함수 $y=ax^2$ 그래프 탐구 앱 🧐')
 
 st.markdown("""
 **[탐구 방법]**
-1.  아래 **슬라이더를 움직여 계수 $a$ 값을 변경**해 보세요.
-2.  그래프의 **볼록한 방향**과 **폭**이 어떻게 변하는지 관찰하세요.
-3.  탐구 후, 아래 **[탐구 결과 확인]** 섹션에 답을 입력하고 확인 버튼을 누르세요.
+1.  왼쪽 사이드바의 **슬라이더를 움직여 계수 $a$ 값을 변경**하세요.
+2.  아래 그래프가 어떻게 변하는지 **한 화면에서** 관찰하세요.
+3.  탐구 후, **[탐구 결과 확인]** 섹션에 답을 입력하고 결과를 확인하세요.
 """)
 
 # --- 그래프 섹션 ---
-
-# 계수 a를 조정하는 슬라이더 생성
-a = st.slider(
-    '계수 $a$ 값 선택:',
-    min_value=-5.0,
-    max_value=5.0,
-    value=1.0,
-    step=0.1,
-    format='%.1f' # 소수점 첫째 자리까지 표시
-)
-
-st.subheader(f'현재 함수: $y = {a:.1f}x^2$')
 
 # 그래프를 그릴 x 값 범위 설정
 x = np.linspace(-10, 10, 400)
 y = a * x**2
 
 # Matplotlib을 사용하여 그래프 그리기
-fig, ax = plt.subplots(figsize=(8, 6))
-ax.plot(x, y, color='blue')
+fig, ax = plt.subplots(figsize=(10, 7)) # 그래프 크기를 더 키웠습니다.
+ax.plot(x, y, color='red', linewidth=3) # 그래프 선을 굵게 표시
 
 # 그래프 설정
-ax.set_title('이차함수 $y=ax^2$ 그래프')
-ax.set_xlabel('$x$')
-ax.set_ylabel('$y$')
+ax.set_title(f'이차함수 $y={a:.1f}x^2$ 그래프', fontsize=18)
+ax.set_xlabel('$x$', fontsize=14)
+ax.set_ylabel('$y$', fontsize=14)
 ax.grid(True, linestyle='--', alpha=0.6)
 ax.axhline(0, color='black', linewidth=1) # x축
 ax.axvline(0, color='black', linewidth=1) # y축
 ax.set_ylim(-10, 10) # y축 범위 고정
 ax.set_xlim(-10, 10) # x축 범위 고정
-# ax.set_aspect('equal', adjustable='box') # 스케일을 동일하게 유지할 경우
+ax.set_aspect('equal', adjustable='box') # x, y 축 스케일 동일하게 설정
 
 st.pyplot(fig)
 
@@ -88,6 +96,3 @@ if st.button('결과 확인'):
         st.warning('❌ 2번 오답입니다. $|a|$가 **작아질수록** 폭이 넓어집니다. $|a|$가 **커질 때**의 변화를 다시 관찰해 보세요.')
     else:
         st.error('❌ 2번 오답입니다. $|a|$의 값 변화에 따른 그래프의 폭 변화를 다시 관찰해 보세요.')
-
-st.markdown('---')
-st.caption('이 앱은 이차함수의 기본형 $y=ax^2$의 성질을 귀납적으로 학습하기 위해 제작되었습니다.')
