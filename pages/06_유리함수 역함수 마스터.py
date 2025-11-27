@@ -46,14 +46,21 @@ def generate_problem():
         if (a * d - b * c) != 0:
             break
             
-    # 세션 상태에 저장
+    # 세션 상태에 문제 저장
     st.session_state.problem_a = a
     st.session_state.problem_b = b
     st.session_state.problem_c = c
     st.session_state.problem_d = d
     st.session_state.checked = False # 채점 여부 초기화
+    
+    # **사용자 입력 값 초기화**
+    st.session_state.user_inv_a = 0
+    st.session_state.user_inv_b = 0
+    st.session_state.user_inv_c = 1 # 분모 x 계수는 0이 아니어야 하므로 1로 초기화
+    st.session_state.user_inv_d = 0
 
-# 초기 문제 생성 (앱 시작 시)
+
+# 초기 문제 생성 및 입력값 초기화 (앱 시작 시)
 if 'problem_a' not in st.session_state:
     generate_problem()
 
@@ -99,24 +106,25 @@ def check_answer():
     user_c = st.session_state.user_inv_c
     user_d = st.session_state.user_inv_d
 
+    # C=0 예외 처리 (분모가 상수가 되어 유리함수 형태를 벗어남)
+    if user_c == 0:
+        st.error("❌ **오답입니다.** 역함수 $f^{-1}(x)$가 유리함수 형태를 유지하려면, 분모 $x$ 계수 (C)는 0이 아니어야 합니다.")
+        st.session_state.checked = False # 채점 실패로 간주
+        return
+
     # 1. 정답 함수 정의 (SymPy Expression)
     true_inverse_func = (inv_a_true * x + inv_b_true) / (inv_c_true * x + inv_d_true)
     
     # 2. 사용자 함수 정의 (SymPy Expression)
-    # 분모가 0일 수 있으므로 try-except로 처리
     try:
-        if user_c * x + user_d == 0: # 분모가 0인 경우 (단순 상수 함수 등)는 오답 처리
-            is_correct = False
-        else:
-            user_inverse_func = (user_a * x + user_b) / (user_c * x + user_d)
-            
-            # 3. 두 함수의 상등 비교 (유리함수는 상수배를 해도 같으므로 simplify를 사용해 비교)
-            # (사용자 함수) - (정답 함수) = 0 이어야 함
-            difference = simplify(user_inverse_func - true_inverse_func)
-            
-            # difference가 0이면 두 함수는 수학적으로 동일 (상수배 포함)
-            is_correct = (difference == 0)
-            
+        user_inverse_func = (user_a * x + user_b) / (user_c * x + user_d)
+        
+        # 3. 두 함수의 상등 비교
+        difference = simplify(user_inverse_func - true_inverse_func)
+        
+        # difference가 0이면 두 함수는 수학적으로 동일 (상수배 포함)
+        is_correct = (difference == 0)
+        
     except Exception:
         # 분모 입력 오류 등 예외 발생 시 오답 처리
         is_correct = False
@@ -147,13 +155,14 @@ st.markdown("$$f^{-1}(x) = \\frac{A x + B}{C x + D}$$ 일 때, 정수 계수 A, 
 
 col1, col2 = st.columns(2)
 with col1:
-    user_inv_a = st.number_input("분자 $x$ 계수 (A):", key="user_inv_a", value=0, format="%d")
-    user_inv_b = st.number_input("분자 상수항 (B):", key="user_inv_b", value=0, format="%d")
+    # key와 value를 세션 상태 변수로 연결하여 초기화 시 반영되도록 함
+    user_inv_a = st.number_input("분자 $x$ 계수 (A):", key="user_inv_a", value=st.session_state.user_inv_a, format="%d")
+    user_inv_b = st.number_input("분자 상수항 (B):", key="user_inv_b", value=st.session_state.user_inv_b, format="%d")
 
 with col2:
     # C는 분모 x 계수이므로 0 입력 시 경고
-    user_inv_c = st.number_input("분모 $x$ 계수 (C):", key="user_inv_c", value=1, format="%d")
-    user_inv_d = st.number_input("분모 상수항 (D):", key="user_inv_d", value=0, format="%d")
+    user_inv_c = st.number_input("분모 $x$ 계수 (C):", key="user_inv_c", value=st.session_state.user_inv_c, format="%d")
+    user_inv_d = st.number_input("분모 상수항 (D):", key="user_inv_d", value=st.session_state.user_inv_d, format="%d")
 
 
 col_btn1, col_btn2 = st.columns(2)
