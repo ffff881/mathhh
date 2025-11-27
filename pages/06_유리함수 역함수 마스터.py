@@ -53,7 +53,7 @@ def generate_problem():
     st.session_state.problem_d = d
     st.session_state.checked = False # 채점 여부 초기화
     
-    # **사용자 입력 값 초기화**
+    # **사용자 입력 값 초기화** (새 문제 시 이전 값 제거)
     st.session_state.user_inv_a = 0
     st.session_state.user_inv_b = 0
     st.session_state.user_inv_c = 1 # 분모 x 계수는 0이 아니어야 하므로 1로 초기화
@@ -63,6 +63,13 @@ def generate_problem():
 # 초기 문제 생성 및 입력값 초기화 (앱 시작 시)
 if 'problem_a' not in st.session_state:
     generate_problem()
+# 초기 실행 시 입력 위젯 값이 세션 상태에 연결되어 있도록 보장
+if 'user_inv_a' not in st.session_state:
+    st.session_state.user_inv_a = 0
+    st.session_state.user_inv_b = 0
+    st.session_state.user_inv_c = 1 
+    st.session_state.user_inv_d = 0
+
 
 # -----------------
 # 4. 문제 풀이 섹션
@@ -100,7 +107,7 @@ def check_answer():
     inv_c_true = c
     inv_d_true = -a
     
-    # 사용자 입력 계수
+    # 사용자 입력 계수 (세션 상태에서 바로 가져옴)
     user_a = st.session_state.user_inv_a
     user_b = st.session_state.user_inv_b
     user_c = st.session_state.user_inv_c
@@ -119,10 +126,10 @@ def check_answer():
     try:
         user_inverse_func = (user_a * x + user_b) / (user_c * x + user_d)
         
-        # 3. 두 함수의 상등 비교
+        # 3. 두 함수의 상등 비교 (SymPy simplify를 사용하여 상수배 관계까지 허용)
         difference = simplify(user_inverse_func - true_inverse_func)
         
-        # difference가 0이면 두 함수는 수학적으로 동일 (상수배 포함)
+        # difference가 0이면 두 함수는 수학적으로 동일
         is_correct = (difference == 0)
         
     except Exception:
@@ -155,12 +162,12 @@ st.markdown("$$f^{-1}(x) = \\frac{A x + B}{C x + D}$$ 일 때, 정수 계수 A, 
 
 col1, col2 = st.columns(2)
 with col1:
-    # key와 value를 세션 상태 변수로 연결하여 초기화 시 반영되도록 함
+    # 🌟 수정: value를 세션 상태 변수에서 가져와 충돌 오류를 방지하고 초기값을 제어합니다.
     user_inv_a = st.number_input("분자 $x$ 계수 (A):", key="user_inv_a", value=st.session_state.user_inv_a, format="%d")
     user_inv_b = st.number_input("분자 상수항 (B):", key="user_inv_b", value=st.session_state.user_inv_b, format="%d")
 
 with col2:
-    # C는 분모 x 계수이므로 0 입력 시 경고
+    # 🌟 수정: value를 세션 상태 변수에서 가져와 충돌 오류를 방지하고 초기값을 제어합니다.
     user_inv_c = st.number_input("분모 $x$ 계수 (C):", key="user_inv_c", value=st.session_state.user_inv_c, format="%d")
     user_inv_d = st.number_input("분모 상수항 (D):", key="user_inv_d", value=st.session_state.user_inv_d, format="%d")
 
