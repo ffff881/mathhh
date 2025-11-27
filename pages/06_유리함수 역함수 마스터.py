@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # -----------------
 # 1. 앱 설정 및 제목
 # -----------------
-st.set_page_config(page_title="유리함수의 역함수 마스터 🎓 (V3)", layout="centered")
+st.set_page_config(page_title="유리함수의 역함수 마스터 🎓 (V4)", layout="centered")
 st.title("유리함수의 역함수 마스터 🎓")
 st.markdown("---")
 
@@ -55,17 +55,16 @@ def generate_problem():
     st.session_state.problem_d = d
     st.session_state.checked = False # 채점 여부 초기화
     
-    # **사용자 입력 값 초기화** (새 문제 시 이전 값 제거)
+    # 사용자 입력 값 초기화
     st.session_state.user_inv_a = 0
     st.session_state.user_inv_b = 0
-    st.session_state.user_inv_c = 1 # 분모 x 계수는 0이 아니어야 하므로 1로 초기화
+    st.session_state.user_inv_c = 1 
     st.session_state.user_inv_d = 0
 
 
 # 초기 문제 생성 및 입력값 초기화 (앱 시작 시)
 if 'problem_a' not in st.session_state:
     generate_problem()
-# 초기 실행 시 입력 위젯 값이 세션 상태에 연결되어 있도록 보장
 if 'user_inv_a' not in st.session_state:
     st.session_state.user_inv_a = 0
     st.session_state.user_inv_b = 0
@@ -80,15 +79,16 @@ if 'user_inv_a' not in st.session_state:
 st.header("2. 역함수 문제 풀이")
 st.subheader("아래 함수의 역함수 $f^{-1}(x)$를 구하시오.")
 
-# 현재 문제 표시
+# 현재 문제 표시: st.latex 사용
 a = st.session_state.problem_a
 b = st.session_state.problem_b
 c = st.session_state.problem_c
 d = st.session_state.problem_d
 
-st.latex(f'''
-f(x) = \frac{{{a}x + {b}}}{{{c}x + {d}}}
-''')
+# 🌟 수정/강조: Raw string(r'') 사용 및 st.latex로 명확하게 수식 렌더링
+st.latex(r'''
+f(x) = \frac{%sx + %s}{%sx + %s}
+''' % (a, b, c, d))
 
 st.markdown("---")
 
@@ -96,7 +96,6 @@ st.markdown("---")
 # 5. 사용자 입력 및 채점 로직
 # -----------------
 
-# SymPy를 사용하여 수학적 검증을 위한 함수 정의
 x = symbols('x')
 
 def check_answer():
@@ -109,7 +108,7 @@ def check_answer():
     inv_c_true = c
     inv_d_true = -a
     
-    # 사용자 입력 계수 (세션 상태에서 바로 가져옴)
+    # 사용자 입력 계수
     user_a = st.session_state.user_inv_a
     user_b = st.session_state.user_inv_b
     user_c = st.session_state.user_inv_c
@@ -117,23 +116,18 @@ def check_answer():
 
     is_correct = False
     
-    # C=0 예외 처리 (분모가 상수가 되어 유리함수 형태를 벗어남)
+    # C=0 예외 처리
     if user_c == 0:
         st.error("❌ **오답입니다.** 역함수 $f^{-1}(x)$가 유리함수 형태를 유지하려면, 분모 $x$ 계수 (C)는 0이 아니어야 합니다.")
         st.session_state.checked = False
         return
 
-    # 1. 정답 함수 정의 (SymPy Expression)
+    # SymPy 계산 로직
     true_inverse_func = (inv_a_true * x + inv_b_true) / (inv_c_true * x + inv_d_true)
     
-    # 2. 사용자 함수 정의 (SymPy Expression)
     try:
         user_inverse_func = (user_a * x + user_b) / (user_c * x + user_d)
-        
-        # 3. 두 함수의 상등 비교 (SymPy simplify를 사용하여 상수배 관계까지 허용)
         difference = simplify(user_inverse_func - true_inverse_func)
-        
-        # difference가 0이면 두 함수는 수학적으로 동일
         is_correct = (difference == 0)
         
     except Exception:
@@ -145,11 +139,14 @@ def check_answer():
     # -----------------
     if is_correct:
         st.success("🎉 **정답입니다!** 역함수 공식을 완벽하게 이해했어요.")
-        # 정답일 때만 그래프 표시 트리거
         st.session_state.show_graph = True 
     else:
         st.error("❌ **오답입니다.** 다시 한번 공식을 확인하고 풀어보세요.")
-        st.session_state.show_graph = False # 오답 시 그래프 숨기기
+        st.session_state.show_graph = False
+        
+        # 🌟 수정/강조: 정답 수식 문자열을 별도로 생성하여 오류 방지
+        correct_latex = r'f^{-1}(x) = \frac{%sx + %s}{%sx + %s}' % (inv_a_true, inv_b_true, inv_c_true, inv_d_true)
+
         st.markdown("---")
         st.subheader("📝 정답 해설")
         st.markdown(f"""
@@ -159,12 +156,12 @@ def check_answer():
         
         따라서 정답 계수는 $A={inv_a_true}, B={inv_b_true}, C={inv_c_true}, D={inv_d_true}$ 이며,
         역함수는 다음과 같습니다.
-        $$f^{-1}(x) = \\frac{{({inv_a_true}) x + {inv_b_true}}}{{{inv_c_true} x + {inv_d_true}}}$$
         """)
+        st.latex(correct_latex)
 
 
 st.subheader("🔑 정답 입력")
-st.markdown("$$f^{-1}(x) = \\frac{A x + B}{C x + D}$$ 일 때, 정수 계수 A, B, C, D의 값을 입력하세요.")
+st.markdown("$$f^{-1}(x) = \frac{A x + B}{C x + D}$$ 일 때, 정수 계수 A, B, C, D의 값을 입력하세요.")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -187,7 +184,7 @@ with col_btn2:
 
 
 # -----------------
-# 6. 그래프 시각화 섹션 (새로 추가)
+# 6. 그래프 시각화 섹션
 # -----------------
 
 if 'show_graph' not in st.session_state:
@@ -219,17 +216,16 @@ if st.session_state.checked and st.session_state.show_graph:
         return (inv_a * x + inv_b) / (inv_c * x + inv_d)
 
     # 그래프 범위 설정
-    x_min = min(va_f, va_inv) - 5
-    x_max = max(va_f, va_inv) + 5
+    # 점근선 주변 5 범위로 설정
+    x_range_min = min(va_f, va_inv) - 5
+    x_range_max = max(va_f, va_inv) + 5
     
-    # 🌟 x 값 생성 (점근선 주변 분리) 🌟
-    # f(x)의 점근선(va_f) 기준
-    x1_f = np.linspace(x_min, va_f - 0.1, 300)
-    x2_f = np.linspace(va_f + 0.1, x_max, 300)
+    # 점근선 주변 분리
+    x1_f = np.linspace(x_range_min, va_f - 0.1, 300)
+    x2_f = np.linspace(va_f + 0.1, x_range_max, 300)
     
-    # f^-1(x)의 점근선(va_inv) 기준
-    x1_inv = np.linspace(x_min, va_inv - 0.1, 300)
-    x2_inv = np.linspace(va_inv + 0.1, x_max, 300)
+    x1_inv = np.linspace(x_range_min, va_inv - 0.1, 300)
+    x2_inv = np.linspace(va_inv + 0.1, x_range_max, 300)
     
     # y 값 계산
     y1_f = func_f(x1_f)
@@ -250,23 +246,32 @@ if st.session_state.checked and st.session_state.show_graph:
     ax.plot(x2_inv, y2_inv, color='orange')
 
     # 3. 점근선 표시
-    ax.axvline(va_f, color='blue', linestyle='--', linewidth=1, alpha=0.6, label=r'$f(x)$ VA')
-    ax.axhline(ha_f, color='blue', linestyle='--', linewidth=1, alpha=0.6, label=r'$f(x)$ HA')
+    # 원래 함수 점근선 (파란색)
+    ax.axvline(va_f, color='blue', linestyle='--', linewidth=1, alpha=0.6)
+    ax.axhline(ha_f, color='blue', linestyle='--', linewidth=1, alpha=0.6)
     
-    ax.axvline(va_inv, color='orange', linestyle=':', linewidth=1, alpha=0.6, label=r'$f^{-1}(x)$ VA')
-    ax.axhline(ha_inv, color='orange', linestyle=':', linewidth=1, alpha=0.6, label=r'$f^{-1}(x)$ HA')
+    # 역함수 점근선 (주황색)
+    ax.axvline(va_inv, color='orange', linestyle=':', linewidth=1, alpha=0.6)
+    ax.axhline(ha_inv, color='orange', linestyle=':', linewidth=1, alpha=0.6)
     
     # 4. y=x 대칭선
     ax.plot([-10, 10], [-10, 10], color='gray', linestyle='-.', linewidth=1, alpha=0.5, label='$y=x$')
     
     # 그래프 설정
-    ax.set_title(r'$f(x)$와 $f^{-1}(x)$ 그래프')
+    ax.set_title(r'$f(x)$와 $f^{-1}(x)$ 그래프 (y=x 대칭 확인)')
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
-    ax.set_xlim(x_min, x_max)
-    ax.set_ylim(-10, 10)
+    # 축 범위는 그래프 데이터 범위 기반으로 설정 (너무 극단적인 값은 제외)
+    y_lim_min = min(min(y1_f), min(y2_f), min(y1_inv), min(y2_inv))
+    y_lim_max = max(max(y1_f), max(y2_f), max(y1_inv), max(y2_inv))
+    
+    # 너무 큰 발산 값은 무시하고 적절한 범위로 제한 (예: -10에서 10)
+    y_lim = 10
+    ax.set_xlim(x_range_min, x_range_max)
+    ax.set_ylim(-y_lim, y_lim) 
+    
     ax.grid(True, linestyle=':', alpha=0.7)
     ax.legend(loc='lower right')
-    ax.set_aspect('equal', adjustable='box') # x, y 축 비율 맞추기
+    ax.set_aspect('equal', adjustable='box') 
 
     st.pyplot(fig)
